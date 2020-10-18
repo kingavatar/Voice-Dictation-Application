@@ -1,12 +1,43 @@
 import 'dart:io';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/all.dart';
 import 'package:hive/hive.dart';
 
 final socketClientProvider =
     StateNotifierProvider<SocketClient>((ref) => SocketClient());
+SnackBar snackBarType(String contentString, int type) {
+  switch (type) {
+    case 0:
+      return SnackBar(
+        content: Text(
+          contentString,
+          style: TextStyle(color: Colors.white),
+        ),
+        duration: Duration(seconds: 1),
+        backgroundColor: Colors.green,
+      );
+    case 1:
+      return SnackBar(
+        content: Text(
+          contentString,
+          style: TextStyle(color: Colors.white),
+        ),
+        duration: Duration(seconds: 1),
+        backgroundColor: Colors.amber,
+      );
+    case 2:
+      return SnackBar(
+        content: Text(
+          contentString,
+          style: TextStyle(color: Colors.white),
+        ),
+        duration: Duration(seconds: 1),
+        backgroundColor: Colors.red,
+      );
+    default:
+  }
+  return SnackBar(content: Text(contentString));
+}
 
 class SocketClient extends StateNotifier<bool> {
   SocketClient() : super(false);
@@ -30,39 +61,49 @@ class SocketClient extends StateNotifier<bool> {
       ipAddr = box.get('ipAddr', defaultValue: "");
       port = box.get('port', defaultValue: 0);
       if (ipAddr == "" || port == 0) {
-        Scaffold.of(context).showSnackBar(SnackBar(
-          content: Text('Wrong Values, Please Try Again'),
-        ));
+        Scaffold.of(scaffoldContext).hideCurrentSnackBar();
+        Scaffold.of(context)
+            .showSnackBar(snackBarType('Wrong Values, Please Try Again', 2));
         return;
       }
-      Scaffold.of(context).showSnackBar(SnackBar(
-          content: Text('Using previous values of ipaddress and port')));
+      Scaffold.of(scaffoldContext).hideCurrentSnackBar();
+      Scaffold.of(context).showSnackBar(
+          snackBarType('Using previous values of ipaddress and port', 1));
     } else {
       box.put('ipAddr', ipAddr);
       box.put('port', port);
     }
+    Scaffold.of(context).hideCurrentSnackBar();
+    Scaffold.of(context).showSnackBar(snackBarType('Connecting...', 1));
     socket = await Socket.connect(ipAddr, port).catchError((e) {
       Scaffold.of(scaffoldContext)
-          .showSnackBar(SnackBar(content: Text('Can\'t connect to Server')));
+          .showSnackBar(snackBarType('can\'t connect to server', 2));
+      _isConnected = false;
+      state = false;
       return;
     });
     if (socket == null) return;
-    sub = socket.listen((event) {}, onError: errorHandler, onDone: () => disconnect);
+    sub = socket.listen((event) {}, onError: errorHandler, onDone: disconnect);
     _isConnected = true;
-    state = !state;
-    Scaffold.of(scaffoldContext)
-        .showSnackBar(SnackBar(content: Text('Connected')));
-    socket.done.then((value) => disconnect);
-    sub.asFuture().then((_) => disconnect);
+    state = true;
+    Scaffold.of(context).hideCurrentSnackBar();
+    Scaffold.of(scaffoldContext).showSnackBar(snackBarType('Connected', 0));
+    // socket.done.then((value) => disconnect);
+    // sub.asFuture().then((_) => disconnect);
   }
 
   bool reconnect(BuildContext context) {
-    ipAddr = box.get('ipAddr', defaultValue: "");
-    port = box.get('port', defaultValue: 0);
-    if (ipAddr == "" || port == 0) {
-      return false;
+    if (!_isConnected) {
+      ipAddr = box.get('ipAddr', defaultValue: "");
+      port = box.get('port', defaultValue: 0);
+      if (ipAddr == "" || port == 0) {
+        return false;
+      } else {
+        connect(ipAddr, port, context);
+        return true;
+      }
     } else {
-      connect(ipAddr, port, context);
+      disconnect();
       return true;
     }
   }
@@ -70,39 +111,42 @@ class SocketClient extends StateNotifier<bool> {
   void errorHandler(error) {
     _isConnected = false;
     Scaffold.of(scaffoldContext)
-        .showSnackBar(SnackBar(content: Text('Disconnected due to $error')));
+        .showSnackBar(snackBarType('Disconnected due to $error', 2));
   }
 
   void sendData(String data, BuildContext context) {
     this.scaffoldContext = context;
-    if (!_isConnected)
+    if (!_isConnected) {
+      Scaffold.of(scaffoldContext).hideCurrentSnackBar();
       Scaffold.of(scaffoldContext)
-          .showSnackBar(SnackBar(content: Text('Not connected')));
-    else
+          .showSnackBar(snackBarType('Not connected', 1));
+    } else
       try {
-        socket.done.then((value) => disconnect);
-        sub.asFuture().then((_) => disconnect);
-        if (!isConnected) return;
+        // socket.done.then((value) => disconnect);
+        // sub.asFuture().then((_) => disconnect);
+        if (!_isConnected) return;
         socket.write(data);
       } on SocketException catch (_) {
+        Scaffold.of(scaffoldContext).hideCurrentSnackBar();
         Scaffold.of(scaffoldContext)
-            .showSnackBar(SnackBar(content: Text('Got Disconnected')));
+            .showSnackBar(snackBarType('Got Disconnected', 2));
         _isConnected = false;
-        state = !state;
+        state = false;
       }
   }
 
   void disconnect() {
-    print("disconnected");
     if (_isConnected) {
-      socket.close();
+      socket.destroy();
+      Scaffold.of(scaffoldContext).hideCurrentSnackBar();
       Scaffold.of(scaffoldContext)
-          .showSnackBar(SnackBar(content: Text('Disconnected')));
+          .showSnackBar(snackBarType('Disconnected', 0));
       _isConnected = false;
-      state = !state;
+      state = false;
     } else {
+      Scaffold.of(scaffoldContext).hideCurrentSnackBar();
       Scaffold.of(scaffoldContext)
-          .showSnackBar(SnackBar(content: Text('Already Disconnected')));
+          .showSnackBar(snackBarType('Already Disconnected', 2));
     }
   }
 }

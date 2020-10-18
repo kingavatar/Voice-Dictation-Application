@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/all.dart';
-import 'package:speechhelper/client.dart';
-import 'package:speechhelper/server_textfield.dart';
 import 'package:speechhelper/settingspage.dart';
 
 final isCollapsedProvider = StateProvider<bool>((ref) => true);
