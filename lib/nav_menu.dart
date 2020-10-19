@@ -76,15 +76,22 @@ class NavMenu extends StatelessWidget {
                 ),
                 SizedBox(height: 10),
                 FlatButton.icon(
-                  icon: Icon(
-                    Icons.settings,
-                    color: Theme.of(context).accentIconTheme.color,
-                  ),
-                  label: Text("Settings",
-                      style: Theme.of(context).textTheme.button),
-                  onPressed: () =>
-                      Navigator.pushNamed(context, SettingsScreen.routeName),
-                ),
+                    icon: Icon(
+                      Icons.settings,
+                      color: Theme.of(context).accentIconTheme.color,
+                    ),
+                    label: Text("Settings",
+                        style: Theme.of(context).textTheme.button),
+                    onPressed: () {
+                      if (context.read(isCollapsedProvider).state)
+                      controller.forward();
+                    else
+                      controller.reverse();
+
+                    context.read(isCollapsedProvider).state =
+                        !context.read(isCollapsedProvider).state;
+                      Navigator.pushNamed(context, SettingsScreen.routeName,arguments: controller);
+                    }),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 40.0),

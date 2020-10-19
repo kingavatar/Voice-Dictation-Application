@@ -11,14 +11,14 @@ class RouteGenerator {
           title: 'Voice Dictation',
         ),
       );
-    }
-    else if( settings.name == '/settings'){
+    } else if (settings.name == '/settings') {
+      final AnimationController args = settings.arguments;
       return MaterialPageRoute(
-        builder: (context) => SettingsScreen(),
+        builder: (context) => SettingsScreen(controller: args,),
       );
     }
     return MaterialPageRoute(
-        builder: (context) => ErrorScreen(),
-      );
+      builder: (context) => ErrorScreen(),
+    );
   }
 }
