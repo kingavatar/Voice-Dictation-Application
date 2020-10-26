@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/all.dart';
@@ -5,6 +6,7 @@ import 'package:hive/hive.dart';
 
 final socketClientProvider =
     StateNotifierProvider<SocketClient>((ref) => SocketClient());
+
 SnackBar snackBarType(String contentString, int type) {
   switch (type) {
     case 0:
@@ -47,8 +49,10 @@ class SocketClient extends StateNotifier<bool> {
   bool get isConnected => _isConnected;
   int port;
   var sub;
+  String serverResponse = "No Response Yet\n0.0";
   final Box<dynamic> box = Hive.box('settings');
   BuildContext scaffoldContext;
+  Completer<String> _completer = new Completer<String>();
   void connect(String ipAddr, int port, BuildContext context) async {
     this.ipAddr = ipAddr;
     this.port = port;
@@ -83,7 +87,11 @@ class SocketClient extends StateNotifier<bool> {
       return;
     });
     if (socket == null) return;
-    sub = socket.listen((event) {}, onError: errorHandler, onDone: disconnect);
+    sub = socket.listen((event) {
+      serverResponse = String.fromCharCodes(event).trim();
+      print("Received "+serverResponse);
+      state = true;
+    }, onError: errorHandler, onDone: disconnect);
     _isConnected = true;
     state = true;
     Scaffold.of(context).hideCurrentSnackBar();
@@ -126,6 +134,14 @@ class SocketClient extends StateNotifier<bool> {
         // sub.asFuture().then((_) => disconnect);
         if (!_isConnected) return;
         socket.write(data);
+        Scaffold.of(scaffoldContext).showSnackBar(SnackBar(
+          content: Text(
+            "Receiving Model Output...",
+            style: TextStyle(color: Colors.white),
+          ),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.amber,
+        ));
       } on SocketException catch (_) {
         Scaffold.of(scaffoldContext).hideCurrentSnackBar();
         Scaffold.of(scaffoldContext)

@@ -93,6 +93,7 @@ class _SpeechPageState extends State<SpeechPage>
     return Consumer(builder: (context, watch, _) {
       bool isCollapsed = watch(isCollapsedProvider).state;
       bool isConnected = watch(socketClientProvider.state);
+      List<String> _servertext = watch(socketClientProvider).serverResponse.split("\n");
       return AnimatedPositioned(
         duration: widget.duration,
         top: 0,
@@ -173,11 +174,23 @@ class _SpeechPageState extends State<SpeechPage>
                     ),
                     child: Padding(
                       padding:
-                          const EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
-                      child: Text(
-                          'Confidence  :  ${(_confidence * 100.0).toStringAsFixed(1)}%',
-                          overflow: TextOverflow.clip,
-                          style: Theme.of(context).textTheme.headline1),
+                          const EdgeInsets.fromLTRB(15.0, 20.0, 15.0, 20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                              'Confidence  :  ${(_confidence * 100.0).toStringAsFixed(1)}%',
+                              overflow: TextOverflow.clip,
+                              style: Theme.of(context).textTheme.headline1),
+                          Text('Avg Model Accuracy',
+                              overflow: TextOverflow.clip,
+                              style: Theme.of(context).textTheme.headline1),
+                          Text(
+                              '${_servertext[1]}%',
+                              overflow: TextOverflow.clip,
+                              style: Theme.of(context).textTheme.headline1),
+                        ],
+                      ),
                     ),
                   ),
                   SizedBox(
@@ -188,6 +201,12 @@ class _SpeechPageState extends State<SpeechPage>
                         text: _text,
                         words: _highlights,
                         textStyle: Theme.of(context).textTheme.bodyText1),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Text(_servertext[0],
+                          style: Theme.of(context).textTheme.bodyText1),
+                    ),
                   ),
                   Align(
                     alignment: Alignment.bottomCenter,
